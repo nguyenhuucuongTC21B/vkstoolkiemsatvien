@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Công cụ ngành Kiểm sát
+Name[vi]=Công cụ ngành Kiểm sát
+GenericName=Prosecutor Toolkit
+GenericName[vi]=Bộ công cụ Kiểm sát
+Comment=Phần mềm hỗ trợ công tác Kiểm sát — offline, Go + Wails v2
+Comment[vi]=Phần mềm hỗ trợ công tác Kiểm sát — offline, Go + Wails v2
+Exec=kiem_sat_toolkit
+Icon=kiem_sat_toolkit
+Terminal=false
+Categories=Office;Legal;Utility;
+Keywords=kiem;sát;prosecutor;legal;vks;
+StartupNotify=true
+StartupWMClass=Công cụ ngành Kiểm sát

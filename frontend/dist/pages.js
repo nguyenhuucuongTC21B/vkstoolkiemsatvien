@@ -2,7 +2,7 @@
 route("dashboard", async (page) => {
   const info = await wcall("go.main.App.GetAppInfo");
   let dbStats = "";
-  const stats = await wcall("go.modules.Legal.Stats");
+  const stats = await wcall("go.legal.Service.Stats");
   if (stats) {
     dbStats = Object.entries(stats).map(([k, v]) =>
       `<div class="stat"><div class="stat-num">${v}</div><div class="stat-label">${k}</div></div>`
@@ -146,7 +146,7 @@ route("an-phi", async (page) => {
       tienBoiThuong: +page.querySelector("#hs-boithuong").value,
       tienAnPhiDaNop: +page.querySelector("#hs-danop").value,
     };
-    const r = await wcall("go.modules.Calc.AnPhiHS", in_, "ui");
+    const r = await wcall("go.calc.Service.AnPhiHS", in_, "ui");
     page.querySelector("#hs-result").innerHTML = anPhiRender(r);
   };
   page.querySelector("#ds-calc").onclick = async () => {
@@ -156,7 +156,7 @@ route("an-phi", async (page) => {
       laVoGia: page.querySelector("#ds-vogia").value === "1",
       tienAnPhiDaNop: +page.querySelector("#ds-danop").value,
     };
-    const r = await wcall("go.modules.Calc.AnPhiDS", in_, "ui");
+    const r = await wcall("go.calc.Service.AnPhiDS", in_, "ui");
     page.querySelector("#ds-result").innerHTML = anPhiDSRender(r);
   };
 });
@@ -241,7 +241,7 @@ route("lai", async (page) => {
       denNgay: page.querySelector("#l-den").value,
       ngayDaoHan: page.querySelector("#l-daohan").value,
     };
-    const r = await wcall("go.modules.Calc.Lai", in_, "ui");
+    const r = await wcall("go.calc.Service.Lai", in_, "ui");
     page.querySelector("#l-result").innerHTML = `
       <div class="result-block">
         <div class="result-label">Số ngày</div><div class="result-value">${r.soNgay} ngày</div>
@@ -298,7 +298,7 @@ route("tuoi", async (page) => {
       ngaySinh: page.querySelector("#t-sinh").value,
       ngayXayRaSuViec: page.querySelector("#t-sv").value,
     };
-    const r = await wcall("go.modules.Calc.Tuoi", in_, "ui");
+    const r = await wcall("go.calc.Service.Tuoi", in_, "ui");
     page.querySelector("#t-result").innerHTML = `
       <div class="result-block">
         <div class="result-label">Tuổi</div><div class="result-value-lg">${r.tuoi} năm ${r.tuoiThang} tháng ${r.tuoiNgay} ngày</div>
@@ -317,7 +317,7 @@ route("tuoi", async (page) => {
       soGio: +page.querySelector("#h-gio").value,
       gioBatDau: page.querySelector("#h-giobatdau").value,
     };
-    const r = await wcall("go.modules.Calc.ThoiHan", in_, "ui");
+    const r = await wcall("go.calc.Service.ThoiHan", in_, "ui");
     page.querySelector("#h-result").innerHTML = `
       <div class="result-block">
         <div class="result-label">Ngày bắt đầu</div><div class="result-value">${r.ngayBatDau}</div>
@@ -358,7 +358,7 @@ route("thoi-hieu", async (page) => {
       ngayXayRaSuViec: page.querySelector("#th-sv").value,
       loaiToiPham: page.querySelector("#th-loai").value,
     };
-    const r = await wcall("go.modules.Calc.ThoiHieuTNHS", in_, "ui");
+    const r = await wcall("go.calc.Service.ThoiHieuTNHS", in_, "ui");
     page.querySelector("#th-result").innerHTML = `
       <div class="result-block">
         <div class="result-label">Thời hiệu</div><div class="result-value-lg">${r.soNamThoiHieu} năm</div>
@@ -416,7 +416,7 @@ route("boi-thuong", async (page) => {
       tienCapDuong: +page.querySelector("#bt-cd").value,
       tienBoiThuongDanhDu: +page.querySelector("#bt-dd").value,
     };
-    const r = await wcall("go.modules.Calc.BoiThuongNT", in_, "ui");
+    const r = await wcall("go.calc.Service.BoiThuongNT", in_, "ui");
     page.querySelector("#bt-result").innerHTML = `
       <div class="result-block">
         <div class="result-label">Tổng TS</div><div class="result-value">${money(r.tongThietHaiTaiSan)}</div>
@@ -457,7 +457,7 @@ route("legal", async (page) => {
   page.querySelector("#lg-search").onclick = async () => {
     const q = page.querySelector("#lg-q").value;
     const lv = page.querySelector("#lg-lv").value;
-    const docs = await wcall("go.modules.Legal.Search", q, lv, 50);
+    const docs = await wcall("go.legal.Service.Search", q, lv, 50);
     const container = page.querySelector("#lg-results");
     if (!docs || docs.length === 0) {
       container.innerHTML = `<div class="callout callout-warning">Không tìm thấy văn bản phù hợp.</div>`;
@@ -481,7 +481,7 @@ route("legal", async (page) => {
     container.querySelectorAll("button[data-id]").forEach(b => {
       b.onclick = async () => {
         const id = +b.dataset.id;
-        const doc = await wcall("go.modules.Legal.GetByID", id);
+        const doc = await wcall("go.legal.Service.GetByID", id);
         if (doc) alert(`${doc.loai} ${doc.soHieu}\n\n${doc.noiDung}`);
       };
     });
@@ -503,7 +503,7 @@ route("spell", async (page) => {
   `;
   page.querySelector("#sp-check").onclick = async () => {
     const text = page.querySelector("#sp-text").value;
-    const r = await wcall("go.modules.Spell.Check", text, "ui");
+    const r = await wcall("go.spell.Service.Check", text, "ui");
     const cats = Object.entries(r.countByCat || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
     page.querySelector("#sp-result").innerHTML = `
       <div class="result-block">
@@ -544,7 +544,7 @@ route("pii", async (page) => {
       replaceMode: page.querySelector("#pi-mode").value,
       keepFirst: page.querySelector("#pi-keep").value === "1",
     };
-    const r = await wcall("go.modules.PII.Mask", page.querySelector("#pi-text").value, in_, "ui");
+    const r = await wcall("go.pii.Service.Mask", page.querySelector("#pi-text").value, in_, "ui");
     const cats = Object.entries(r.countByCat || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
     page.querySelector("#pi-result").innerHTML = `
       <div class="result-block">
@@ -587,7 +587,7 @@ route("ocr", async (page) => {
       dpi: +page.querySelector("#o-dpi").value,
     };
     page.querySelector("#o-result").innerHTML = "<div class='text-muted'>Đang OCR...</div>";
-    const r = await wcall("go.modules.OCR.Recognize", page.querySelector("#o-path").value, in_, "ui");
+    const r = await wcall("go.ocr.Service.Recognize", page.querySelector("#o-path").value, in_, "ui");
     if (!r || r.pageCount === 0) {
       page.querySelector("#o-result").innerHTML = `<div class="callout callout-error">OCR thất bại. ${(r?.warnings||[]).join("; ")||"Kiểm tra file/path/deps."}</div>`;
       return;
@@ -650,7 +650,7 @@ route("file", async (page) => {
       sortBy: page.querySelector("#f-sort").value,
       dryRun: page.querySelector("#f-dry").checked,
     };
-    const r = await wcall("go.modules.File.Apply", spec, "ui");
+    const r = await wcall("go.file.Service.Apply", spec, "ui");
     const rows = (r.preview || []).slice(0, 50).map(p => `
       <tr><td>${p.oldPath}</td><td>→</td><td>${p.newPath}</td><td>${p.status}</td></tr>
     `).join("");
@@ -672,7 +672,7 @@ route("cases", async (page) => {
     </div>
   `;
   const render = async () => {
-    const cases = await wcall("go.modules.Case.List", "", "", 100);
+    const cases = await wcall("go.casefile.Service.List", "", "", 100);
     const list = page.querySelector("#c-list");
     if (!cases || cases.length === 0) {
       list.innerHTML = `<p class="text-muted">Chưa có vụ án nào.</p>`;
@@ -689,7 +689,7 @@ route("cases", async (page) => {
     const type = prompt("Loại (HS/DS/HC/THADS/THAHS/KN-TC/KKCI):", "DS");
     const stage = prompt("Giai đoạn (thu_ly/dieu_tra/truy_to/xet_xu/thi_hanh):", "thu_ly");
     const c = { caseNumber: num, caseType: type, stage: stage, status: "mo" };
-    await wcall("go.modules.Case.Create", c, "ui");
+    await wcall("go.casefile.Service.Create", c, "ui");
     render();
   };
 });
@@ -707,7 +707,7 @@ route("evidence", async (page) => {
 // ──────────── Docs templates ────────────
 route("docs", async (page) => {
   page.innerHTML = `<div class="card"><div class="card-title">Biểu mẫu tố tụng</div><div id="d-list">Đang tải...</div></div>`;
-  const list = await wcall("go.modules.Docs.ListTemplates", "", "");
+  const list = await wcall("go.docs.Service.ListTemplates", "", "");
   const container = page.querySelector("#d-list");
   if (!list || list.length === 0) {
     container.innerHTML = "<p class='text-muted'>Chưa có biểu mẫu nào.</p>";
@@ -723,7 +723,7 @@ route("docs", async (page) => {
       if (!fields) return;
       let parsed = {};
       try { parsed = JSON.parse(fields); } catch(e) { alert("JSON không hợp lệ"); return; }
-      const r = await wcall("go.modules.Docs.Fill", { templateId: id, fields: parsed, outputFmt: "html" }, "ui");
+      const r = await wcall("go.docs.Service.Fill", { templateId: id, fields: parsed, outputFmt: "html" }, "ui");
       const form = page.querySelector("#d-form");
       form.innerHTML = `<div class="result-block">
         <div class="result-label">Xuất ra: ${r.outputPath}</div>
@@ -736,7 +736,7 @@ route("docs", async (page) => {
 // ──────────── History ────────────
 route("history", async (page) => {
   page.innerHTML = `<div class="card"><div class="card-title">Lịch sử tính toán</div><div id="hi-list">Đang tải...</div></div>`;
-  const items = await wcall("go.modules.Calc.History", 100);
+  const items = await wcall("go.calc.Service.History", 100);
   const list = page.querySelector("#hi-list");
   if (!items || items.length === 0) {
     list.innerHTML = "<p class='text-muted'>Chưa có bản ghi nào.</p>";

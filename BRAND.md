@@ -68,3 +68,32 @@ Windows metadata (khi build .exe) sẽ hiển thị:
 ## Lịch sử thay đổi
 
 - **v0.1.0** (2026-10-30): Thêm logo VKS, icon Windows, avatar coder, popup bản quyền.
+
+## ⚠️ LỆNH TRUYỀN TỪ CHỦ SỞ HỮU (PERSISTENT — áp dụng cho mọi phiên bản sau)
+
+1. **Bắt buộc dùng đúng 2 file asset sau** (do chủ sở hữu cung cấp):
+   - **`VKS PNG 192.png`** (192×192 PNG, 17KB) → đặt tại `assets/logo.png` + `frontend/dist/logo.png` + `build/linux/icon.png`
+   - **`VKS128.ico`** (128×128 ICO, 67KB) → đặt tại `build/windows/icon.ico`
+   - **KHÔNG được thay thế** bằng icon/logo khác (kể cả icon VKS lấy từ nguồn khác) trừ khi chủ sở hữu yêu cầu rõ ràng.
+
+2. **Bắt buộc kèm file hướng dẫn sử dụng chi tiết** ở root project, phát hành ở **4 định dạng**:
+   - `HUONG_DAN_SU_DUNG.md` — source markdown (27KB)
+   - `HUONG_DAN_SU_DUNG.html` — interactive HTML với sidebar TOC, search, print-friendly (92KB, self-contained với logo embed base64)
+   - `HUONG_DAN_SU_DUNG.pdf` — PDF A4 19 trang có header/footer, dùng cho in ấn (408KB)
+   - `HUONG_DAN_SU_DUNG.epub` — ebook EPUB cho Apple Books / Kindle / Calibre (39KB, có cover)
+   
+   File HTML là định dạng chính (mở bằng browser, có navigation + search). Các định dạng khác được sinh ra từ markdown qua pandoc + playwright.
+   
+   Nội dung phải:
+   - Hướng dẫn cài đặt + chạy trên Windows + Linux
+   - Mô tả từng module với ví dụ cụ thể (input → output)
+   - Có troubleshooting section
+   - Có FAQ
+   - Được cập nhật mỗi lần thêm module mới
+
+3. **Popup Bản quyền + footer** phải giữ ở mọi phiên bản (xem section "Popup Bản quyền" ở trên).
+
+4. **Mọi phiên bản mới** phải:
+   - Bump version trong `wails.json` và `app.go` (AppInfo.Version)
+   - Cập nhật `BRAND.md` lịch sử thay đổi
+   - Cập nhật `HUONG_DAN_SU_DUNG.md` nếu có module mới

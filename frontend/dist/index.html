@@ -92,7 +92,11 @@
   </div>
 </div>
 
-<script src="/wails.js"></script>
+<!-- Wails runtime — tự inject window.go.<package>.<Struct>.<Method> khi page load -->
+<!-- KHÔNG cần load các file binding riêng — Wails backend tự gọi SetBindings() -->
+<script src="/wails/runtime.js"></script>
+
+<!-- App code (load sau runtime) -->
 <script src="/app.js"></script>
 <script src="/pages.js"></script>
 <script src="/copyright.js"></script>
