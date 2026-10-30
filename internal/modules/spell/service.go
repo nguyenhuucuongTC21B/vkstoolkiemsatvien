@@ -113,12 +113,16 @@ func (s *Service) Check(text string, actor string) SpellResult {
                 }
         }
 
-        // 4. Double punctuation: ",,", ".." (more than 2), "!!", "??"
-        reDP := regexp.MustCompile(`([,.;:!?,])\1{1,}`)
+        // 4. Double punctuation: ",,", ".." (3+), "!!", "??", ";;"
+        // RE2 (Go regex) không hỗ trợ backreference \1, nên liệt kê từng cặp.
+        reDP := regexp.MustCompile(`(?:,,|\.\.\.+|;;|!!|\?\?)`)
         for _, m := range reDP.FindAllStringIndex(text, -1) {
+                orig := text[m[0]:m[1]]
+                // Suggestion: rút gọn về 1 ký tự duy nhất
+                suggest := string(orig[0])
                 issues = append(issues, SpellIssue{
-                        Type: "punct", Original: text[m[0]:m[1]],
-                        Suggestion: string(text[m[0]]), Start: m[0], End: m[1],
+                        Type: "punct", Original: orig,
+                        Suggestion: suggest, Start: m[0], End: m[1],
                 })
                 countByCat["punct"]++
         }

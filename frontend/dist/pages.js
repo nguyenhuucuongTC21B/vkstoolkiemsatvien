@@ -755,6 +755,7 @@ route("audit", async (page) => {
 // ──────────── About ────────────
 route("about", async (page) => {
   const info = await wcall("go.main.App.GetAppInfo");
+  const cp = info?.copyright || {};
   page.innerHTML = `
     <div class="card">
       <div class="card-title">Giới thiệu</div>
@@ -765,6 +766,24 @@ route("about", async (page) => {
       <p class="mt-4 text-muted">Data dir: <code>${info?.dataDir || "?"}</code></p>
       <p class="text-muted">Modules: ${(info?.modules || []).join(", ")}</p>
     </div>
+
+    <div class="card">
+      <div class="card-title">Bản quyền</div>
+      <div class="flex" style="align-items: flex-start; gap: 16px;">
+        <img src="${cp.avatarPath || '/avatarC.jpg'}" alt="Coder" style="width:120px; border-radius:6px; flex-shrink:0;">
+        <div>
+          <p><b>${cp.fullName || "Coder Developed by Nguyễn Hữu Cường"}</b></p>
+          <p>Chức vụ: <b>${cp.title || "CV CY KTCC"}</b></p>
+          <p>Điện thoại: <a href="tel:${(cp.phone||'').replace(/\s/g,'')}">${cp.phone || "0905 6666 24"}</a></p>
+          <p>Email: <a href="mailto:${cp.email}">${cp.email || "doremon.dn01@gmail.com"}</a></p>
+          <p class="text-muted mt-4">© 2026 Nguyễn Hữu Cường. Mọi quyền được bảo lưu.</p>
+        </div>
+      </div>
+      <button class="btn mt-4" onclick="document.getElementById('btn-copyright').click()">
+        Xem ảnh đầy đủ
+      </button>
+    </div>
+
     <div class="card">
       <div class="card-title">Module đã implement</div>
       <ul>

@@ -7,14 +7,14 @@
   "frontend:dev:watcher": "",
   "frontend:dev:serverUrl": "",
   "author": {
-    "name": "KSV Office Toolkit",
-    "email": ""
+    "name": "Nguyễn Hữu Cường",
+    "email": "doremon.dn01@gmail.com"
   },
   "info": {
     "companyName": "Viện Kiểm sát nhân dân",
     "productName": "Công cụ ngành Kiểm sát",
     "productVersion": "0.1.0",
-    "copyright": "© 2026",
+    "copyright": "© 2026 Nguyễn Hữu Cường — doremon.dn01@gmail.com",
     "comments": "Bộ công cụ nghiệp vụ Kiểm sát offline, single binary Windows/Linux."
   },
   "wailsjsdir": "./frontend/wailsjs"

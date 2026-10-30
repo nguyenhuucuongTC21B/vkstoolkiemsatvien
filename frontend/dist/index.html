@@ -10,10 +10,10 @@
 <div id="app">
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-mark">KS</div>
+      <img src="/logo.png" alt="VKS" class="brand-logo">
       <div class="brand-text">
         <div class="brand-title">Công cụ KS</div>
-        <div class="brand-sub">Offline · v0.1.0-mvp</div>
+        <div class="brand-sub">Offline · v0.1.0</div>
       </div>
     </div>
     <nav class="nav">
@@ -50,6 +50,9 @@
     <div class="sidebar-foot">
       <div id="offline-badge" class="badge badge-offline">100% Offline</div>
       <div id="db-stats" class="db-stats">Đang tải...</div>
+      <button id="btn-copyright" class="btn-copyright" title="Thông tin bản quyền">
+        © Bản quyền
+      </button>
     </div>
   </aside>
 
@@ -67,8 +70,31 @@
   </main>
 </div>
 
+<!-- Popup Bản quyền -->
+<div id="copyright-modal" class="modal" hidden>
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <button class="modal-close" id="btn-close-copyright" aria-label="Đóng">&times;</button>
+    <div class="copyright-body">
+      <img src="/avatarC.jpg" alt="Coder avatar" class="avatar-img">
+      <div class="copyright-info">
+        <h2>Thông tin bản quyền</h2>
+        <p class="coder-name">Coder Developed by <b>Nguyễn Hữu Cường</b></p>
+        <p class="coder-title">Chức vụ: <b>CV CY KTCC</b></p>
+        <hr>
+        <p><span class="info-label">Điện thoại:</span> <a href="tel:0905666624">0905 6666 24</a></p>
+        <p><span class="info-label">Email:</span> <a href="mailto:doremon.dn01@gmail.com">doremon.dn01@gmail.com</a></p>
+        <hr>
+        <p class="copyright-text">© 2026 Nguyễn Hữu Cường. Mọi quyền được bảo lưu.</p>
+        <p class="copyright-text muted">Phần mềm Công cụ ngành Kiểm sát — offline, Go + Wails v2.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/wails.js"></script>
 <script src="/app.js"></script>
 <script src="/pages.js"></script>
+<script src="/copyright.js"></script>
 </body>
 </html>

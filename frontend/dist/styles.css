@@ -30,15 +30,13 @@ body {
   padding: 20px 16px;
   border-bottom: 1px solid #e9ebec;
 }
-.brand-mark {
-  width: 38px; height: 38px;
-  background: #3e525c;
-  color: white;
-  font-weight: 700;
-  font-size: 15px;
-  display: flex; align-items: center; justify-content: center;
+.brand-logo {
+  width: 42px;
+  height: 42px;
   border-radius: 6px;
-  letter-spacing: -0.5px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #000;
 }
 .brand-title { font-weight: 600; color: #212425; }
 .brand-sub { font-size: 11px; color: #7d8487; }
@@ -76,6 +74,10 @@ body {
   border-top: 1px solid #e9ebec;
   font-size: 11px;
   color: #7d8487;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
 }
 .badge {
   display: inline-block;
@@ -84,9 +86,149 @@ body {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: .5px;
+  align-self: flex-start;
 }
 .badge-offline { background: #437453; color: white; }
-.db-stats { margin-top: 6px; }
+.db-stats { font-size: 11px; }
+
+.btn-copyright {
+  background: transparent;
+  border: 1px solid #b8c0c7;
+  color: #3e525c;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+  margin-top: 4px;
+}
+.btn-copyright:hover {
+  background: #3e525c;
+  color: white;
+  border-color: #3e525c;
+}
+
+/* ──────────────────── Modal (popup Bản quyền) ──────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal[hidden] { display: none; }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+}
+.modal-content {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  max-width: 720px;
+  max-height: 92vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  display: flex;
+  animation: modalIn .2s ease-out;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #7d8487;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background .12s;
+}
+.modal-close:hover {
+  background: #e9ebec;
+  color: #212425;
+}
+.copyright-body {
+  display: flex;
+  width: 100%;
+  max-height: 92vh;
+}
+.avatar-img {
+  width: 280px;
+  height: auto;
+  max-height: 92vh;
+  object-fit: contain;
+  background: #f4f4f5;
+  flex-shrink: 0;
+}
+.copyright-info {
+  padding: 32px 28px;
+  flex: 1;
+  overflow-y: auto;
+}
+.copyright-info h2 {
+  font-size: 20px;
+  color: #212425;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+.coder-name {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+.coder-name b { color: #3e525c; }
+.coder-title {
+  font-size: 14px;
+  color: #4a5258;
+  margin-bottom: 16px;
+}
+.copyright-info hr {
+  border: none;
+  border-top: 1px solid #e9ebec;
+  margin: 16px 0;
+}
+.copyright-info p {
+  font-size: 13px;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.info-label {
+  display: inline-block;
+  width: 90px;
+  color: #7d8487;
+  font-weight: 500;
+}
+.copyright-info a {
+  color: #3586ae;
+  text-decoration: none;
+  font-weight: 500;
+}
+.copyright-info a:hover { text-decoration: underline; }
+.copyright-text {
+  font-size: 12px !important;
+  color: #4a5258;
+  margin-top: 8px;
+}
+.copyright-text.muted { color: #7d8487; }
+
+@media (max-width: 640px) {
+  .modal-content { flex-direction: column; max-width: 95vw; }
+  .avatar-img { width: 100%; max-height: 40vh; }
+}
 
 .main {
   flex: 1;
