@@ -434,10 +434,11 @@ route("boi-thuong", async (page) => {
 route("legal", async (page) => {
   page.innerHTML = `
     <div class="card">
-      <div class="card-title">Tra cứu văn bản pháp luật (offline)</div>
+      <div class="card-title">Tra cứu văn bản pháp luật (offline) — Smart Search</div>
+      <p class="text-muted mb-4">Hỗ trợ: <b>"điều 27"</b> (tìm theo số điều), <b>"326/2016"</b> (số hiệu), <b>"án phí"</b> / <b>"thời hiệu"</b> (từ khóa nội dung)</p>
       <div class="form-grid">
-        <div class="form-row"><label>Từ khóa (số hiệu / trích yếu)</label>
-          <input id="lg-q" type="text" placeholder="vd: 326/2016, án phí, BLHS điều 27">
+        <div class="form-row"><label>Từ khóa</label>
+          <input id="lg-q" type="text" placeholder='vd: điều 27, 326/2016, "án phí", thời hiệu' value="điều 27">
         </div>
         <div class="form-row"><label>Lĩnh vực</label>
           <select id="lg-lv">
@@ -450,43 +451,175 @@ route("legal", async (page) => {
           </select>
         </div>
       </div>
-      <button class="btn" id="lg-search">Tìm kiếm</button>
+      <button class="btn" id="lg-search">🔍 Tìm kiếm</button>
       <div id="lg-results" class="mt-4"></div>
     </div>
+
+    <div class="card">
+      <div class="card-title">Cơ sở dữ liệu luật hiện có</div>
+      <div id="lg-list"></div>
+    </div>
   `;
+
+  // List all legal docs on initial load
+  const allDocs = await wcall("go.legal.Service.Search", "", "", 100);
+  const listHtml = (allDocs || []).map(d => `
+    <div class="card" style="margin-bottom:8px; padding:12px;">
+      <span class="badge" style="background:#3586ae; color:white;">${d.loai}</span>
+      <b style="margin-left:8px">${d.soHieu}</b>
+      <span class="text-muted" style="margin-left:8px">(${d.ngayBanHanh})</span>
+      <div class="mt-2">${d.trichYeu}</div>
+      <button class="btn btn-sm mt-2" data-id="${d.id}">📖 Xem cấu trúc Điều/Khoản</button>
+    </div>
+  `).join("");
+  page.querySelector("#lg-list").innerHTML = listHtml || "<p class='text-muted'>Chưa có văn bản.</p>";
+
+  // Wire "Xem cấu trúc" buttons
+  page.querySelectorAll("#lg-list button[data-id]").forEach(b => {
+    b.onclick = async () => {
+      const id = +b.dataset.id;
+      const doc = await wcall("go.legal.Service.GetFullByID", id);
+      if (!doc) { alert("Không load được"); return; }
+      renderLegalDocModal(doc);
+    };
+  });
+
+  // Search button
   page.querySelector("#lg-search").onclick = async () => {
     const q = page.querySelector("#lg-q").value;
     const lv = page.querySelector("#lg-lv").value;
-    const docs = await wcall("go.legal.Service.Search", q, lv, 50);
-    const container = page.querySelector("#lg-results");
-    if (!docs || docs.length === 0) {
-      container.innerHTML = `<div class="callout callout-warning">Không tìm thấy văn bản phù hợp.</div>`;
-      return;
-    }
-    container.innerHTML = `<p class="text-muted mb-2">Tìm thấy ${docs.length} văn bản:</p>` +
-      docs.map(d => `
-        <div class="card" style="margin-bottom:8px; padding:12px;">
-          <div class="flex-between">
-            <div>
-              <span class="badge" style="background:#3586ae; color:white;">${d.loai}</span>
-              <b style="margin-left:8px">${d.soHieu}</b>
-              <span class="text-muted" style="margin-left:8px">(${d.ngayBanHanh})</span>
-            </div>
-            <button class="btn btn-sm" data-id="${d.id}">Xem</button>
-          </div>
-          <div class="mt-2"><b>${d.trichYeu}</b></div>
-          <div class="text-muted mt-2">${d.tomTat}</div>
-        </div>
-      `).join("");
-    container.querySelectorAll("button[data-id]").forEach(b => {
-      b.onclick = async () => {
-        const id = +b.dataset.id;
-        const doc = await wcall("go.legal.Service.GetByID", id);
-        if (doc) alert(`${doc.loai} ${doc.soHieu}\n\n${doc.noiDung}`);
-      };
-    });
+    const result = await wcall("go.legal.Service.SmartSearch", q, lv, 50);
+    renderSmartSearchResults(page.querySelector("#lg-results"), result);
   };
+
+  // Auto-trigger search on load
+  page.querySelector("#lg-search").click();
 });
+
+function renderSmartSearchResults(container, result) {
+  if (!result) {
+    container.innerHTML = `<div class="callout callout-warning">Không có kết quả.</div>`;
+    return;
+  }
+  let html = `<div class="callout">Loại query: <b>${result.queryType}</b></div>`;
+
+  // Dieu hits
+  if (result.dieuHits && result.dieuHits.length > 0) {
+    html += `<h3>Điều khớp (${result.dieuHits.length})</h3>`;
+    for (const hit of result.dieuHits) {
+      html += renderDieuCard(hit);
+    }
+  }
+
+  // Khoan hits
+  if (result.khoanHits && result.khoanHits.length > 0) {
+    html += `<h3>Khoản/Điểm khớp (${result.khoanHits.length})</h3>`;
+    for (const hit of result.khoanHits) {
+      html += renderKhoanCard(hit);
+    }
+  }
+
+  // Docs (flat)
+  if (result.docs && result.docs.length > 0) {
+    html += `<h3>Văn bản khớp (${result.docs.length})</h3>`;
+    for (const d of result.docs) {
+      html += `
+        <div class="card" style="margin-bottom:8px; padding:12px;">
+          <span class="badge" style="background:#3586ae; color:white;">${d.loai}</span>
+          <b style="margin-left:8px">${d.soHieu}</b>
+          <span class="text-muted" style="margin-left:8px">(${d.ngayBanHanh})</span>
+          <div class="mt-2">${d.trichYeu}</div>
+          <div class="text-muted mt-2">${d.tomTat}</div>
+          <button class="btn btn-sm mt-2" onclick="showLegalDoc(${d.id})">📖 Xem cấu trúc</button>
+        </div>
+      `;
+    }
+  }
+
+  if (!html.includes("khớp")) {
+    html = `<div class="callout callout-warning">Không tìm thấy kết quả cho "<b>${result.query}</b>".</div>`;
+  }
+  container.innerHTML = html;
+}
+
+function renderDieuCard(hit) {
+  return `
+    <div class="card" style="margin-bottom:8px; padding:12px; border-left: 4px solid #3586ae;">
+      <div class="text-muted">${hit.docTrichYeu} — ${hit.docSoHieu}</div>
+      <h4 style="margin: 4px 0;">Điều ${hit.dieu.soDieu}: ${hit.dieu.tenDieu}</h4>
+      ${renderKhoanList(hit.dieu.khoanList)}
+    </div>
+  `;
+}
+
+function renderKhoanCard(hit) {
+  return `
+    <div class="card" style="margin-bottom:8px; padding:12px; border-left: 4px solid #c66646;">
+      <div class="text-muted">${hit.docTrichYeu} — ${hit.docSoHieu}</div>
+      <div class="text-muted">Điều ${hit.soDieu}: ${hit.tenDieu}</div>
+      ${renderKhoanList([hit.khoan])}
+    </div>
+  `;
+}
+
+function renderKhoanList(khoanList) {
+  if (!khoanList) return "";
+  let html = "";
+  for (const k of khoanList) {
+    html += `<p style="margin: 6px 0;"><b>${k.soKhoan}.</b> ${k.noiDung}</p>`;
+    if (k.diemList && k.diemList.length > 0) {
+      for (const d of k.diemList) {
+        html += `<p style="margin: 4px 0 4px 24px;"><b>${d.soDiem})</b> ${d.noiDung}</p>`;
+      }
+    }
+  }
+  return html;
+}
+
+function showLegalDoc(id) {
+  wcall("go.legal.Service.GetFullByID", id).then(doc => {
+    if (doc) renderLegalDocModal(doc);
+  });
+}
+
+window.showLegalDoc = showLegalDoc;
+
+function renderLegalDocModal(doc) {
+  // Render to a modal overlay
+  let modal = document.getElementById("legal-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "legal-modal";
+    modal.className = "modal";
+    modal.innerHTML = `
+      <div class="modal-backdrop"></div>
+      <div class="modal-content" style="max-width: 900px;">
+        <button class="modal-close" onclick="document.getElementById('legal-modal').hidden=true">&times;</button>
+        <div id="legal-modal-body" style="padding: 32px; overflow-y:auto; max-height:92vh;"></div>
+      </div>
+    `;
+    modal.querySelector(".modal-backdrop").onclick = () => modal.hidden = true;
+    document.body.appendChild(modal);
+  }
+  let html = `
+    <h2 style="margin-bottom: 8px;">${doc.loai} ${doc.soHieu}</h2>
+    <p class="text-muted">${doc.coQuanBanHanh} — ${doc.ngayBanHanh}</p>
+    <h3 style="margin-top: 16px;">${doc.trichYeu}</h3>
+    <p>${doc.tomTat}</p>
+    <hr>
+    <h3 style="margin-top: 16px;">Nội dung (${doc.dieuList.length} điều)</h3>
+  `;
+  for (const dieu of doc.dieuList) {
+    html += `
+      <div style="margin: 16px 0; padding: 12px; background: #f4f4f5; border-left: 4px solid #3586ae; border-radius: 4px;">
+        <h4 style="margin: 0 0 8px;">Điều ${dieu.soDieu}: ${dieu.tenDieu}</h4>
+        ${renderKhoanList(dieu.khoanList)}
+      </div>
+    `;
+  }
+  modal.querySelector("#legal-modal-body").innerHTML = html;
+  modal.hidden = false;
+}
 
 // ──────────── Spell check ────────────
 route("spell", async (page) => {
@@ -497,22 +630,53 @@ route("spell", async (page) => {
         <label>Văn bản cần kiểm tra</label>
         <textarea id="sp-text" rows="8" style="font-family:monospace;">Ông thi han an truong hop nhung cua  nguoi  ,  chi  thi han,.,. a^ a( o^</textarea>
       </div>
-      <button class="btn" id="sp-check">Rà soát</button>
+      <div class="flex mt-2">
+        <button class="btn" id="sp-check">🔍 Rà soát</button>
+        <button class="btn btn-ghost" id="sp-copy-fixed">📋 Copy văn bản đã sửa</button>
+      </div>
       <div id="sp-result" class="mt-4"></div>
+    </div>
+    <div class="callout">
+      <b>Phát hiện:</b> telex chưa chuyển (a^ â, a( ă, u* ư, o^ ô, o* ơ, e^ ê, d/ đ),
+      double whitespace, double punct (,, .. !! ??), space trước punct, term_norm
+      (thi han an → thi hành án), literal typos.
     </div>
   `;
   page.querySelector("#sp-check").onclick = async () => {
     const text = page.querySelector("#sp-text").value;
     const r = await wcall("go.spell.Service.Check", text, "ui");
-    const cats = Object.entries(r.countByCat || {}).map(([k, v]) => `${k}: ${v}`).join(", ");
+    if (!r) return;
+    const cats = Object.entries(r.countByCat || {}).map(([k, v]) =>
+      `<span class="badge" style="background:#e9ebec; color:#3e525c; margin-right: 6px;">${k}: ${v}</span>`
+    ).join("");
     page.querySelector("#sp-result").innerHTML = `
       <div class="result-block">
         <div class="result-label">Phát hiện ${r.totalCount} lỗi</div>
-        <div class="text-muted">${cats}</div>
-        <div class="result-detail" style="white-space:pre-wrap; max-height:300px; overflow-y:auto;">${r.markedText}</div>
+        <div class="mt-2">${cats}</div>
+        <div class="result-detail" style="white-space:pre-wrap; max-height:200px; overflow-y:auto; margin-top: 12px;">
+          <b>Văn bản đánh dấu:</b><br>${escapeHtml(r.markedText)}
+        </div>
+        <div class="result-detail" style="white-space:pre-wrap; max-height:300px; overflow-y:auto; margin-top: 16px; background: #eaf3ed; border-left: 4px solid #437453;">
+          <b>✓ Văn bản đã sửa hoàn thiện:</b><br>${escapeHtml(r.fixedText)}
+        </div>
+        <div class="text-muted mt-2">
+          ${r.stats.issuesFixed} lỗi đã sửa · ${r.stats.originalChars} → ${r.stats.fixedChars} ký tự
+        </div>
       </div>`;
   };
+  page.querySelector("#sp-copy-fixed").onclick = async () => {
+    const text = page.querySelector("#sp-text").value;
+    const r = await wcall("go.spell.Service.Check", text, "ui");
+    if (!r) return;
+    navigator.clipboard.writeText(r.fixedText).then(() => {
+      alert("Đã copy văn bản đã sửa vào clipboard!");
+    });
+  };
 });
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 
 // ──────────── PII ────────────
 route("pii", async (page) => {
@@ -666,71 +830,395 @@ route("file", async (page) => {
 route("cases", async (page) => {
   page.innerHTML = `
     <div class="card">
-      <div class="card-title">Hồ sơ vụ án</div>
-      <button class="btn" id="c-new">+ Vụ án mới</button>
-      <div id="c-list" class="mt-4"></div>
+      <div class="card-title">Hồ sơ vụ án — CRUD đầy đủ</div>
+      <div class="flex mb-4">
+        <button class="btn" id="c-new">+ Vụ án mới</button>
+        <select id="c-filter-type" class="ml-2">
+          <option value="">Tất cả loại</option>
+          <option value="HS">Hình sự</option>
+          <option value="DS">Dân sự</option>
+          <option value="HC">Hành chính</option>
+          <option value="THADS">THA dân sự</option>
+          <option value="THAHS">THA hình sự</option>
+          <option value="KN-TC">Khiếu nại tố cáo</option>
+          <option value="KKCI">Khởi kiện công ích</option>
+        </select>
+        <select id="c-filter-status" class="ml-2">
+          <option value="">Tất cả trạng thái</option>
+          <option value="mo">Mở</option>
+          <option value="dong">Đóng</option>
+          <option value="tam_ngung">Tạm ngưng</option>
+        </select>
+        <button class="btn btn-ghost ml-2" id="c-refresh">🔄 Tải lại</button>
+      </div>
+      <div id="c-list"></div>
     </div>
+    <div id="c-form"></div>
   `;
-  const render = async () => {
-    const cases = await wcall("go.casefile.Service.List", "", "", 100);
+
+  async function render() {
+    const type = page.querySelector("#c-filter-type").value;
+    const status = page.querySelector("#c-filter-status").value;
+    const cases = await wcall("go.casefile.Service.List", type, status, 200);
     const list = page.querySelector("#c-list");
     if (!cases || cases.length === 0) {
-      list.innerHTML = `<p class="text-muted">Chưa có vụ án nào.</p>`;
+      list.innerHTML = `<p class="text-muted">Chưa có vụ án nào. Bấm "+ Vụ án mới" để tạo.</p>`;
       return;
     }
-    list.innerHTML = `<table><thead><tr><th>Số</th><th>Loại</th><th>Giai đoạn</th><th>KSV</th><th>Deadline</th><th>Trạng thái</th></tr></thead><tbody>` +
-      cases.map(c => `<tr><td>${c.caseNumber}</td><td>${c.caseType}</td><td>${c.stage}</td><td>${c.assignedKsv||"—"}</td><td>${c.deadline||"—"}</td><td>${c.status}</td></tr>`).join("") +
+    list.innerHTML = `<table><thead><tr>
+      <th>Số vụ án</th><th>Loại</th><th>Giai đoạn</th><th>KSV</th><th>Ngày thụ lý</th><th>Deadline</th><th>Trạng thái</th><th></th>
+    </tr></thead><tbody>` +
+      cases.map(c => {
+        const dlClass = c.deadline && new Date(c.deadline) < new Date(Date.now() + 7*24*60*60*1000) ? 'style="color: #c66646; font-weight: bold;"' : '';
+        return `<tr>
+          <td><b>${c.caseNumber}</b></td>
+          <td><span class="badge" style="background:#e9ebec; color:#3e525c;">${c.caseType}</span></td>
+          <td>${c.stage}</td>
+          <td>${c.assignedKsv || "—"}</td>
+          <td>${c.receivedDate || "—"}</td>
+          <td ${dlClass}>${c.deadline || "—"}</td>
+          <td>${c.status === 'mo' ? '🟢 Mở' : c.status === 'dong' ? '⚫ Đóng' : '🟡 Tạm ngưng'}</td>
+          <td>
+            <button class="btn btn-sm" data-id="${c.id}" data-act="edit">✍ Sửa</button>
+            <button class="btn btn-sm" data-id="${c.id}" data-act="status">Đổi trạng thái</button>
+            ${c.status === 'mo' ? `<button class="btn btn-sm btn-danger" data-id="${c.id}" data-act="close">Đóng</button>` : ''}
+          </td>
+        </tr>`;
+      }).join("") +
       `</tbody></table>`;
+    list.querySelectorAll("button[data-id]").forEach(b => {
+      b.onclick = async () => {
+        const id = b.dataset.id;
+        const act = b.dataset.act;
+        if (act === "edit") showEditForm(id);
+        else if (act === "status") {
+          const newStatus = prompt("Trạng thái mới (mo/dong/tam_ngung):", "mo");
+          if (newStatus) {
+            await wcall("go.casefile.Service.SetStatus", id, newStatus, "ui");
+            render();
+          }
+        } else if (act === "close") {
+          if (confirm("Đóng vụ án này? (soft delete — vẫn còn trong DB)")) {
+            await wcall("go.casefile.Service.Delete", id, "ui");
+            render();
+          }
+        }
+      };
+    });
+  }
+
+  function showEditForm(id) {
+    wcall("go.casefile.Service.Get", id).then(c => {
+      if (!c) return;
+      const form = page.querySelector("#c-form");
+      form.innerHTML = caseFormHTML(c, "Sửa vụ án", async (data) => {
+        data.id = id;
+        await wcall("go.casefile.Service.Update", data, "ui");
+        form.innerHTML = "";
+        render();
+      });
+    });
+  }
+
+  page.querySelector("#c-new").onclick = () => {
+    const form = page.querySelector("#c-form");
+    form.innerHTML = caseFormHTML({
+      caseNumber: "", caseType: "DS", stage: "thu_ly", assignedKsv: "",
+      receivedDate: new Date().toISOString().slice(0, 10), deadline: "",
+      parties: [], notes: "", status: "mo"
+    }, "Tạo vụ án mới", async (data) => {
+      const created = await wcall("go.casefile.Service.Create", data, "ui");
+      if (created) {
+        form.innerHTML = "";
+        render();
+      } else {
+        alert("Lỗi khi tạo vụ án");
+      }
+    });
   };
+  page.querySelector("#c-refresh").onclick = render;
+  page.querySelector("#c-filter-type").onchange = render;
+  page.querySelector("#c-filter-status").onchange = render;
   render();
-  page.querySelector("#c-new").onclick = async () => {
-    const num = prompt("Số vụ án (vd: QĐ 12/2026/TLPT-DS):");
-    if (!num) return;
-    const type = prompt("Loại (HS/DS/HC/THADS/THAHS/KN-TC/KKCI):", "DS");
-    const stage = prompt("Giai đoạn (thu_ly/dieu_tra/truy_to/xet_xu/thi_hanh):", "thu_ly");
-    const c = { caseNumber: num, caseType: type, stage: stage, status: "mo" };
-    await wcall("go.casefile.Service.Create", c, "ui");
-    render();
-  };
 });
+
+function caseFormHTML(c, title, onSubmit) {
+  const div = document.createElement("div");
+  div.innerHTML = `
+    <div class="card">
+      <div class="card-title">${title}</div>
+      <div class="form-grid">
+        <div class="form-row"><label>Số vụ án</label><input id="cf-num" type="text" value="${c.caseNumber || ''}" placeholder="QĐ 12/2026/TLPT-DS"></div>
+        <div class="form-row"><label>Loại</label>
+          <select id="cf-type">
+            ${['HS','DS','HC','THADS','THAHS','KN-TC','KKCI'].map(t =>
+              `<option value="${t}" ${c.caseType === t ? 'selected' : ''}>${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-row"><label>Giai đoạn</label>
+          <select id="cf-stage">
+            ${['thu_ly','dieu_tra','truy_to','xet_xu','thi_hanh'].map(s =>
+              `<option value="${s}" ${c.stage === s ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-row"><label>KSV phụ trách</label><input id="cf-ksv" type="text" value="${c.assignedKsv || ''}"></div>
+        <div class="form-row"><label>Ngày thụ lý</label><input id="cf-rec" type="date" value="${c.receivedDate || ''}"></div>
+        <div class="form-row"><label>Deadline</label><input id="cf-dl" type="date" value="${c.deadline || ''}"></div>
+      </div>
+      <div class="form-row"><label>Đương sự (phẩy phân tách)</label>
+        <input id="cf-parties" type="text" value="${(c.parties || []).join(', ')}" placeholder="Nguyễn A, Công ty X">
+      </div>
+      <div class="form-row"><label>Ghi chú</label>
+        <textarea id="cf-notes" rows="3">${c.notes || ''}</textarea>
+      </div>
+      <div class="flex mt-4">
+        <button class="btn" id="cf-save">💾 Lưu</button>
+        <button class="btn btn-ghost" id="cf-cancel">Hủy</button>
+      </div>
+    </div>
+  `;
+  div.querySelector("#cf-cancel").onclick = () => { div.innerHTML = ""; };
+  div.querySelector("#cf-save").onclick = () => {
+    const data = {
+      caseNumber: div.querySelector("#cf-num").value,
+      caseType: div.querySelector("#cf-type").value,
+      stage: div.querySelector("#cf-stage").value,
+      assignedKsv: div.querySelector("#cf-ksv").value,
+      receivedDate: div.querySelector("#cf-rec").value,
+      deadline: div.querySelector("#cf-dl").value,
+      parties: div.querySelector("#cf-parties").value.split(",").map(s => s.trim()).filter(s => s),
+      notes: div.querySelector("#cf-notes").value,
+      status: c.status || "mo",
+    };
+    onSubmit(data);
+  };
+  return div;
+}
 
 // ──────────── Evidence ────────────
 route("evidence", async (page) => {
   page.innerHTML = `
     <div class="card">
-      <div class="card-title">Gắn nhãn chứng cứ</div>
-      <p class="text-muted">Truy cập qua module "Vụ án" — chọn vụ án rồi gắn nhãn cho file tài liệu.</p>
+      <div class="card-title">Gắn nhãn chứng cứ — Form thêm trực quan</div>
+      <div class="form-grid">
+        <div class="form-row"><label>Vụ án (case ID)</label><input id="e-case" type="text" placeholder="case_xxx"></div>
+        <div class="form-row"><label>Nhãn (vd: CT-01)</label><input id="e-label" type="text" placeholder="CT-01"></div>
+        <div class="form-row"><label>Màu nhãn</label><input id="e-color" type="color" value="#ff0000"></div>
+        <div class="form-row"><label>Loại file</label>
+          <select id="e-type">
+            <option value="pdf">PDF</option>
+            <option value="image">Ảnh</option>
+            <option value="video">Video</option>
+            <option value="audio">Audio</option>
+            <option value="docx">Word</option>
+            <option value="other">Khác</option>
+          </select>
+        </div>
+        <div class="form-row" style="grid-column: span 2;"><label>Đường dẫn file</label>
+          <input id="e-path" type="text" placeholder="/abs/path/to/file.pdf">
+        </div>
+        <div class="form-row"><label>Marker trang/thời gian</label><input id="e-marker" type="text" placeholder="p12 hoặc video@00:14:30"></div>
+        <div class="form-row"><label>Tags (phẩy phân tách)</label><input id="e-tags" type="text" placeholder="quan_trong, khung_1"></div>
+        <div class="form-row" style="grid-column: span 2;"><label>Mô tả</label>
+          <textarea id="e-caption" rows="2" placeholder="Bản khai của nhân chứng..."></textarea>
+        </div>
+      </div>
+      <button class="btn" id="e-add">+ Thêm chứng cứ</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Danh sách chứng cứ theo vụ án</div>
+      <div class="flex mb-4">
+        <input id="e-list-case" type="text" placeholder="case ID cần xem" style="width: 300px;">
+        <button class="btn btn-ghost" id="e-list-btn">📋 Liệt kê</button>
+      </div>
+      <div id="e-list-out"></div>
     </div>
   `;
+  page.querySelector("#e-add").onclick = async () => {
+    const ev = {
+      caseId: page.querySelector("#e-case").value,
+      label: page.querySelector("#e-label").value,
+      labelColor: page.querySelector("#e-color").value,
+      filePath: page.querySelector("#e-path").value,
+      fileType: page.querySelector("#e-type").value,
+      pageMarker: page.querySelector("#e-marker").value,
+      caption: page.querySelector("#e-caption").value,
+      tags: page.querySelector("#e-tags").value.split(",").map(s => s.trim()).filter(s => s),
+    };
+    const r = await wcall("go.evidence.Service.Add", ev, "ui");
+    if (r) {
+      alert(`✓ Đã thêm chứng cứ: ${r.label} (ID: ${r.id})`);
+      page.querySelector("#e-list-case").value = r.caseId;
+      page.querySelector("#e-list-btn").click();
+    }
+  };
+  page.querySelector("#e-list-btn").onclick = async () => {
+    const caseId = page.querySelector("#e-list-case").value;
+    if (!caseId) { alert("Nhập case ID"); return; }
+    const items = await wcall("go.evidence.Service.ListByCase", caseId);
+    const tree = await wcall("go.evidence.Service.TreeByCase", caseId);
+    const out = page.querySelector("#e-list-out");
+    if (!items || items.length === 0) {
+      out.innerHTML = "<p class='text-muted'>Không có chứng cứ.</p>";
+      return;
+    }
+    let html = `<p class="text-muted mb-2">${items.length} chứng cứ, gom thành ${tree.length} nhóm:</p>`;
+    for (const node of tree) {
+      html += `<h4 style="margin-top: 16px;">📁 ${node.category} (${node.items.length})</h4>`;
+      html += `<table><thead><tr><th>Nhãn</th><th>File</th><th>Marker</th><th>Mô tả</th><th></th></tr></thead><tbody>`;
+      for (const it of node.items) {
+        html += `<tr>
+          <td><span style="background:${it.labelColor}; color:white; padding:2px 8px; border-radius:3px;">${it.label}</span></td>
+          <td><code>${it.filePath}</code></td>
+          <td>${it.pageMarker || '—'}</td>
+          <td>${it.caption || '—'}</td>
+          <td><button class="btn btn-sm btn-danger" data-id="${it.id}">Xóa</button></td>
+        </tr>`;
+      }
+      html += `</tbody></table>`;
+    }
+    out.innerHTML = html;
+    out.querySelectorAll("button[data-id]").forEach(b => {
+      b.onclick = async () => {
+        if (confirm("Xóa chứng cứ này? (file gốc KHÔNG bị xóa)")) {
+          await wcall("go.evidence.Service.Delete", b.dataset.id, "ui");
+          page.querySelector("#e-list-btn").click();
+        }
+      };
+    });
+  };
 });
 
 // ──────────── Docs templates ────────────
 route("docs", async (page) => {
-  page.innerHTML = `<div class="card"><div class="card-title">Biểu mẫu tố tụng</div><div id="d-list">Đang tải...</div></div>`;
-  const list = await wcall("go.docs.Service.ListTemplates", "", "");
-  const container = page.querySelector("#d-list");
-  if (!list || list.length === 0) {
-    container.innerHTML = "<p class='text-muted'>Chưa có biểu mẫu nào.</p>";
-    return;
+  page.innerHTML = `
+    <div class="card">
+      <div class="card-title">Thư viện biểu mẫu tố tụng — Soạn thảo ra file Word</div>
+      <p class="text-muted mb-4">Bấm <b>Soạn</b> → điền form → xuất file <code>.docx</code> Word thật (mở bằng MS Word/WPS).</p>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Lọc theo lĩnh vực</label>
+          <select id="d-lv-filter">
+            <option value="">Tất cả</option>
+            <option value="hinh_su">Hình sự</option>
+            <option value="dan_su">Dân sự</option>
+            <option value="thi_hanh_an">Thi hành án</option>
+            <option value="khieu_nai">Khiếu nại tố cáo</option>
+            <option value="khac">Khác</option>
+          </select>
+        </div>
+      </div>
+      <div id="d-list">Đang tải...</div>
+    </div>
+    <div id="d-form"></div>
+  `;
+
+  async function loadList() {
+    const lv = page.querySelector("#d-lv-filter").value;
+    const list = await wcall("go.docs.Service.ListTemplates", lv, "");
+    const container = page.querySelector("#d-list");
+    if (!list || list.length === 0) {
+      container.innerHTML = "<p class='text-muted'>Không có biểu mẫu.</p>";
+      return;
+    }
+    container.innerHTML = `<table><thead><tr>
+      <th>Mã mẫu</th><th>Tên mẫu</th><th>Lĩnh vực</th><th>Giai đoạn</th><th></th>
+    </tr></thead><tbody>` +
+      list.map(t => `<tr>
+        <td><b>${t.maMau}</b></td>
+        <td>${t.tenMau}</td>
+        <td>${t.linhVuc}</td>
+        <td>${t.giaiDoan}</td>
+        <td><button class="btn btn-sm" data-id="${t.id}" data-ghichu="${t.ghiChu || ''}">✍ Soạn</button></td>
+      </tr>`).join("") +
+      `</tbody></table>`;
+    container.querySelectorAll("button[data-id]").forEach(b => {
+      b.onclick = async () => {
+        const id = +b.dataset.id;
+        showTemplateForm(id, b.dataset.ghichu);
+      };
+    });
   }
-  container.innerHTML = `<table><thead><tr><th>Mã</th><th>Tên</th><th>Lĩnh vực</th><th>Giai đoạn</th><th></th></tr></thead><tbody>` +
-    list.map(t => `<tr><td>${t.maMau}</td><td>${t.tenMau}</td><td>${t.linhVuc}</td><td>${t.giaiDoan}</td><td><button class="btn btn-sm" data-id="${t.id}">Soạn</button></td></tr>`).join("") +
-    `</tbody></table><div id="d-form" class="mt-4"></div>`;
-  container.querySelectorAll("button[data-id]").forEach(b => {
-    b.onclick = async () => {
-      const id = +b.dataset.id;
-      const fields = prompt("Nhập trường thay thế (JSON):", `{"case_number":"QĐ 01/2026","ksv":"Nguyễn A","today":"30/10/2026"}`);
-      if (!fields) return;
-      let parsed = {};
-      try { parsed = JSON.parse(fields); } catch(e) { alert("JSON không hợp lệ"); return; }
-      const r = await wcall("go.docs.Service.Fill", { templateId: id, fields: parsed, outputFmt: "html" }, "ui");
-      const form = page.querySelector("#d-form");
-      form.innerHTML = `<div class="result-block">
-        <div class="result-label">Xuất ra: ${r.outputPath}</div>
-        <div class="result-detail" style="white-space:pre-wrap;">${r.html}</div>
-      </div>`;
+  loadList();
+  page.querySelector("#d-lv-filter").onchange = loadList;
+
+  function showTemplateForm(templateId, ghiChu) {
+    const form = page.querySelector("#d-form");
+    // Parse ghiChu để lấy list of fields
+    // Format: "Mẫu ... — điền field1, field2, field3"
+    const fieldsMatch = ghiChu.match(/điền\s+(.+)$/i);
+    let fields = [];
+    if (fieldsMatch) {
+      fields = fieldsMatch[1].split(",").map(s => s.trim()).filter(s => s);
+    }
+    if (fields.length === 0) {
+      // Fallback: default common fields
+      fields = ["case_number", "today", "ksv"];
+    }
+
+    form.innerHTML = `
+      <div class="card">
+        <div class="card-title">Điền thông tin biểu mẫu</div>
+        <p class="text-muted mb-4">Các trường cần điền (có thể để trống, sẽ giữ nguyên placeholder):</p>
+        <div class="form-grid" id="d-fields">
+          ${fields.map(f => `
+            <div class="form-row">
+              <label>${f}</label>
+              <input data-field="${f}" type="text" value="${f === 'today' ? new Date().toLocaleDateString('vi-VN') : ''}">
+            </div>
+          `).join("")}
+        </div>
+        <div class="flex mt-4">
+          <button class="btn" id="d-gen-docx">📄 Xuất file Word (.docx)</button>
+          <button class="btn btn-ghost" id="d-gen-html">🌐 Xuất HTML</button>
+          <button class="btn btn-ghost" id="d-cancel">Hủy</button>
+        </div>
+        <div id="d-output" class="mt-4"></div>
+      </div>
+    `;
+    page.querySelector("#d-cancel").onclick = () => { form.innerHTML = ""; };
+    page.querySelector("#d-gen-docx").onclick = async () => {
+      const fieldsObj = {};
+      page.querySelectorAll("#d-fields input[data-field]").forEach(inp => {
+        fieldsObj[inp.dataset.field] = inp.value;
+      });
+      page.querySelector("#d-output").innerHTML = "<div class='text-muted'>Đang sinh file .docx...</div>";
+      const r = await wcall("go.docs.Service.Fill", {
+        templateId, fields: fieldsObj, outputFmt: "docx"
+      }, "ui");
+      if (!r) {
+        page.querySelector("#d-output").innerHTML = "<div class='callout callout-error'>Lỗi khi sinh file.</div>";
+        return;
+      }
+      page.querySelector("#d-output").innerHTML = `
+        <div class="callout callout-success">
+          <b>✓ Đã xuất file Word thành công!</b><br>
+          Đường dẫn: <code>${r.outputPath}</code><br><br>
+          <b>Xem trước nội dung:</b>
+          <div style="background: white; padding: 12px; border-radius: 4px; margin-top: 8px; max-height: 300px; overflow-y: auto;">
+            ${r.html}
+          </div>
+        </div>`;
     };
-  });
+    page.querySelector("#d-gen-html").onclick = async () => {
+      const fieldsObj = {};
+      page.querySelectorAll("#d-fields input[data-field]").forEach(inp => {
+        fieldsObj[inp.dataset.field] = inp.value;
+      });
+      const r = await wcall("go.docs.Service.Fill", {
+        templateId, fields: fieldsObj, outputFmt: "html"
+      }, "ui");
+      if (r) {
+        page.querySelector("#d-output").innerHTML = `
+          <div class="callout callout-success">
+            <b>✓ Đã xuất HTML:</b> <code>${r.outputPath}</code>
+            <div style="background: white; padding: 12px; border-radius: 4px; margin-top: 8px; max-height: 300px; overflow-y: auto;">
+              ${r.html}
+            </div>
+          </div>`;
+      }
+    };
+  }
 });
 
 // ──────────── History ────────────

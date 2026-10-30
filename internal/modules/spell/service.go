@@ -48,8 +48,18 @@ type SpellResult struct {
         Issues     []SpellIssue `json:"issues"`
         CountByCat map[string]int `json:"countByCat"`
         TotalCount int          `json:"totalCount"`
-        MarkedText string       `json:"markedText"` // text with [[...]] markers around issues
+        MarkedText string       `json:"markedText"` // text with «old→new» markers around issues
         OutputPath string       `json:"outputPath"`
+        FixedText  string       `json:"fixedText"`  // NEW v0.2.0: text with all fixes applied
+        Stats      SpellStats   `json:"stats"`
+}
+
+// SpellStats — thống kê về văn bản đã sửa.
+type SpellStats struct {
+        OriginalChars int `json:"originalChars"`
+        FixedChars    int `json:"fixedChars"`
+        IssuesFixed   int `json:"issuesFixed"`
+        IssuesSkipped int `json:"issuesSkipped"`
 }
 
 // Check scans plain text and returns issues.
@@ -175,28 +185,54 @@ func (s *Service) Check(text string, actor string) SpellResult {
                 }
         }
 
-        // Build marked text — wrap each issue with <<...>>
-        out := text
-        // Apply in reverse to preserve indices
-        sorted := make([]SpellIssue, len(issues))
-        copy(sorted, issues)
-        for i := 0; i < len(sorted); i++ {
-                for j := i + 1; j < len(sorted); j++ {
-                        if sorted[j].Start > sorted[i].Start {
-                                sorted[i], sorted[j] = sorted[j], sorted[i]
-                        }
+        // Sort issues by start position (ascending)
+        for i := 1; i < len(issues); i++ {
+                for j := i; j > 0 && issues[j].Start < issues[j-1].Start; j-- {
+                        issues[j], issues[j-1] = issues[j-1], issues[j]
                 }
         }
-        for _, iss := range sorted {
-                out = out[:iss.Start] + "«" + iss.Original + "→" + iss.Suggestion + "»" + out[iss.End:]
+        // Drop overlapping issues (keep first)
+        if len(issues) > 1 {
+                filtered := []SpellIssue{issues[0]}
+                lastEnd := issues[0].End
+                for i := 1; i < len(issues); i++ {
+                        if issues[i].Start >= lastEnd {
+                                filtered = append(filtered, issues[i])
+                                lastEnd = issues[i].End
+                        }
+                }
+                issues = filtered
+        }
+
+        // Build marked text — work backwards to preserve indices
+        marked := text
+        for i := len(issues) - 1; i >= 0; i-- {
+                iss := issues[i]
+                marked = marked[:iss.Start] + "«" + iss.Original + "→" + iss.Suggestion + "»" + marked[iss.End:]
+        }
+
+        // Build fixed text — apply all suggestions
+        fixed := text
+        for i := len(issues) - 1; i >= 0; i-- {
+                iss := issues[i]
+                fixed = fixed[:iss.Start] + iss.Suggestion + fixed[iss.End:]
         }
 
         res := SpellResult{
                 Issues: issues, CountByCat: countByCat, TotalCount: len(issues),
-                MarkedText: out,
+                MarkedText: marked,
+                FixedText:  fixed,
+                Stats: SpellStats{
+                        OriginalChars: len(text),
+                        FixedChars:    len(fixed),
+                        IssuesFixed:   len(issues),
+                        IssuesSkipped: 0,
+                },
         }
         if s.audit != nil {
-                d, _ := json.Marshal(map[string]interface{}{"count": res.TotalCount, "cats": countByCat})
+                d, _ := json.Marshal(map[string]interface{}{
+                        "count": res.TotalCount, "cats": countByCat, "fixed_chars": len(fixed),
+                })
                 s.audit.Log("spell", "check", actor, string(d), "normal")
         }
         return res

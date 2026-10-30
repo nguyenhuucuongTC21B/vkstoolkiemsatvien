@@ -15,6 +15,7 @@ import (
 
         "kiem_sat_toolkit/internal/audit"
         "kiem_sat_toolkit/internal/db"
+        "kiem_sat_toolkit/internal/docxgen"
         "kiem_sat_toolkit/internal/store"
 )
 
@@ -43,9 +44,10 @@ type FillResult struct {
 }
 
 // Fill loads the template, replaces placeholders, writes to disk.
+// Output format can be "html", "md", "txt", or "docx" (real Word file).
 func (s *Service) Fill(req FillRequest, actor string) (*FillResult, error) {
         if req.OutputFmt == "" {
-                req.OutputFmt = "html"
+                req.OutputFmt = "docx" // default to Word .docx
         }
         tpl, err := s.loadTemplate(req.TemplateID)
         if err != nil {
@@ -64,6 +66,25 @@ func (s *Service) Fill(req FillRequest, actor string) (*FillResult, error) {
         outDir := filepath.Join(s.dataDir(), "exports")
         _ = os.MkdirAll(outDir, 0755)
         ts := time.Now().Format("20060102_150405")
+
+        if req.OutputFmt == "docx" {
+                // Generate real .docx file using docxgen
+                doc := docxgen.New()
+                htmlToDocx(doc, html, fields)
+                outPath := filepath.Join(outDir, fmt.Sprintf("doc_%d_%s.docx", req.TemplateID, ts))
+                if err := doc.Save(outPath); err != nil {
+                        return nil, fmt.Errorf("save docx: %w", err)
+                }
+                if s.audit != nil {
+                        d, _ := json.Marshal(map[string]interface{}{
+                                "tpl": req.TemplateID, "case": req.CaseID, "out": outPath, "fmt": "docx",
+                        })
+                        s.audit.Log("docs", "fill", actor, string(d), "restricted")
+                }
+                return &FillResult{HTML: html, OutputPath: outPath}, nil
+        }
+
+        // Otherwise write plain text/md/html
         outPath := filepath.Join(outDir, fmt.Sprintf("doc_%d_%s.%s", req.TemplateID, ts, req.OutputFmt))
         _ = os.WriteFile(outPath, []byte(html), 0644)
 
@@ -74,6 +95,70 @@ func (s *Service) Fill(req FillRequest, actor string) (*FillResult, error) {
                 s.audit.Log("docs", "fill", actor, string(d), "restricted")
         }
         return &FillResult{HTML: html, OutputPath: outPath}, nil
+}
+
+// htmlToDocx converts simple HTML template content to docx document.
+// Recognizes: <h1>, <h2>, <h3>, <p>, <ul><li>, <table><tr><td>.
+// Plus applies field substitutions already done in html string.
+func htmlToDocx(doc *docxgen.Document, html string, fields map[string]interface{}) {
+        // Strip newlines and normalize
+        html = strings.ReplaceAll(html, "\n", " ")
+        html = strings.ReplaceAll(html, "\t", " ")
+
+        // Very simple HTML parser — handle one tag at a time
+        tags := regexp.MustCompile(`<[^>]+>`)
+        parts := tags.Split(html, -1)
+        allMatches := tags.FindAllString(html, -1)
+
+        for i, text := range parts {
+                text = strings.TrimSpace(text)
+                // Decode basic entities
+                text = strings.ReplaceAll(text, "&amp;", "&")
+                text = strings.ReplaceAll(text, "&lt;", "<")
+                text = strings.ReplaceAll(text, "&gt;", ">")
+                text = strings.ReplaceAll(text, "&quot;", `"`)
+                text = strings.ReplaceAll(text, "&apos;", "'")
+                text = strings.ReplaceAll(text, "&nbsp;", " ")
+
+                var tag string
+                if i < len(allMatches) {
+                        tag = allMatches[i]
+                }
+
+                if text == "" && !strings.HasPrefix(tag, "<br") {
+                        continue
+                }
+
+                switch {
+                case strings.HasPrefix(tag, "<h1"):
+                        doc.AddHeading(text, 1)
+                case strings.HasPrefix(tag, "<h2"):
+                        doc.AddHeading(text, 2)
+                case strings.HasPrefix(tag, "<h3"):
+                        doc.AddHeading(text, 3)
+                case strings.HasPrefix(tag, "<li"):
+                        doc.AddListItem(text)
+                case strings.HasPrefix(tag, "<br"):
+                        if text != "" {
+                                doc.AddParagraph(text)
+                        } else {
+                                doc.AddEmptyLine()
+                        }
+                default:
+                        if text != "" {
+                                // Auto-detect center for short title-like lines
+                                if len(text) < 80 && !strings.Contains(text, ":") &&
+                                        (strings.Contains(strings.ToUpper(text), "QUYẾT ĐỊNH") ||
+                                                strings.Contains(strings.ToUpper(text), "THÔNG BÁO") ||
+                                                strings.Contains(strings.ToUpper(text), "ĐƠN") ||
+                                                strings.Contains(strings.ToUpper(text), "BIÊN BẢN")) {
+                                        doc.AddCentered(text, true)
+                                } else {
+                                        doc.AddParagraph(text)
+                                }
+                        }
+                }
+        }
 }
 
 // loadTemplate pulls the HTML body of one bieu_mau row.
