@@ -1,0 +1,21 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "kiem-sat-toolkit",
+  "outputfilename": "kiem_sat_toolkit",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dev:watcher": "",
+  "frontend:dev:serverUrl": "",
+  "author": {
+    "name": "KSV Office Toolkit",
+    "email": ""
+  },
+  "info": {
+    "companyName": "Viện Kiểm sát nhân dân",
+    "productName": "Công cụ ngành Kiểm sát",
+    "productVersion": "0.1.0",
+    "copyright": "© 2026",
+    "comments": "Bộ công cụ nghiệp vụ Kiểm sát offline, single binary Windows/Linux."
+  },
+  "wailsjsdir": "./frontend/wailsjs"
+}

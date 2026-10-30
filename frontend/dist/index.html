@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Công cụ ngành Kiểm sát</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">KS</div>
+      <div class="brand-text">
+        <div class="brand-title">Công cụ KS</div>
+        <div class="brand-sub">Offline · v0.1.0-mvp</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-item active" data-route="dashboard">Tổng quan</button>
+      <div class="nav-group">
+        <div class="nav-group-title">Tính toán</div>
+        <button class="nav-item" data-route="an-phi">Án phí HS/DS</button>
+        <button class="nav-item" data-route="lai">Tiền lãi</button>
+        <button class="nav-item" data-route="tuoi">Tuổi & thời hạn</button>
+        <button class="nav-item" data-route="thoi-hieu">Thời hiệu TNHS</button>
+        <button class="nav-item" data-route="boi-thuong">Bồi thường NTNĐ</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Văn bản</div>
+        <button class="nav-item" data-route="legal">Tra cứu luật</button>
+        <button class="nav-item" data-route="spell">Chính tả</button>
+        <button class="nav-item" data-route="pii">Che thông tin</button>
+        <button class="nav-item" data-route="docs">Biểu mẫu</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Hồ sơ</div>
+        <button class="nav-item" data-route="cases">Vụ án</button>
+        <button class="nav-item" data-route="evidence">Chứng cứ</button>
+        <button class="nav-item" data-route="ocr">OCR PDF/ảnh</button>
+        <button class="nav-item" data-route="file">Đổi tên file</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Hệ thống</div>
+        <button class="nav-item" data-route="history">Lịch sử tính toán</button>
+        <button class="nav-item" data-route="audit">Audit log</button>
+        <button class="nav-item" data-route="about">Giới thiệu</button>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div id="offline-badge" class="badge badge-offline">100% Offline</div>
+      <div id="db-stats" class="db-stats">Đang tải...</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div id="page-title" class="page-title">Tổng quan</div>
+      <div class="topbar-actions">
+        <button id="btn-data-dir" class="btn btn-ghost">Thư mục dữ liệu</button>
+      </div>
+    </header>
+
+    <section id="page" class="page">
+      <!-- pages rendered here -->
+    </section>
+  </main>
+</div>
+
+<script src="/wails.js"></script>
+<script src="/app.js"></script>
+<script src="/pages.js"></script>
+</body>
+</html>
