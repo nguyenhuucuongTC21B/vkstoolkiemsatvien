@@ -1,0 +1,159 @@
+name: Build & Release
+
+# Workflow này chạy khi:
+# - Push lên branch main/master (build Linux + Windows, upload artifact)
+# - Tạo tag v*.*.* (build + tạo GitHub Release với .exe + Linux binary)
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+jobs:
+  # ──────────────────────────────────────────────
+  # Job 1: Build Linux binary trên ubuntu-latest
+  # ──────────────────────────────────────────────
+  build-linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Install Linux system deps (webkit2gtk-4.1)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libglib2.0-dev \
+            build-essential \
+            pkg-config
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Build Linux binary
+        run: |
+          export PATH="$HOME/go/bin:$PATH"
+          ./build/scripts/build.sh linux
+
+      - name: Verify binary
+        run: |
+          file build/bin/kiem_sat_toolkit_linux
+          ls -lh build/bin/kiem_sat_toolkit_linux
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiem_sat_toolkit-linux-x64
+          path: build/bin/kiem_sat_toolkit_linux
+          retention-days: 30
+
+  # ──────────────────────────────────────────────
+  # Job 2: Build Windows .exe trên windows-latest
+  # ──────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Build Windows .exe
+        shell: bash
+        run: |
+          export PATH="$HOME/go/bin:$PATH"
+          # Trên Windows runner, WebView2 SDK đã có sẵn.
+          # Wails tự động link WebView2 loader.
+          go build -tags "desktop,production" \
+            -ldflags "-s -w -H windowsgui -X main.version=${GITHUB_REF_NAME:-dev}" \
+            -o build/bin/kiem_sat_toolkit.exe .
+
+      - name: Verify .exe
+        shell: bash
+        run: |
+          ls -lh build/bin/kiem_sat_toolkit.exe
+          file build/bin/kiem_sat_toolkit.exe 2>/dev/null || true
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiem_sat_toolkit-windows-x64
+          path: build/bin/kiem_sat_toolkit.exe
+          retention-days: 30
+
+  # ──────────────────────────────────────────────
+  # Job 3: Tạo GitHub Release khi push tag v*.*.*
+  # ──────────────────────────────────────────────
+  release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kiem_sat_toolkit-linux-x64
+          path: artifacts/
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kiem_sat_toolkit-windows-x64
+          path: artifacts/
+
+      - name: Rename artifacts for release
+        run: |
+          cd artifacts
+          mv kiem_sat_toolkit_linux kiem_sat_toolkit_${GITHUB_REF_NAME}_linux_x64
+          mv kiem_sat_toolkit.exe kiem_sat_toolkit_${GITHUB_REF_NAME}_windows_x64.exe
+          ls -lh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            artifacts/kiem_sat_toolkit_${{ github.ref_name }}_linux_x64
+            artifacts/kiem_sat_toolkit_${{ github.ref_name }}_windows_x64.exe
+          body: |
+            # Công cụ ngành Kiểm sát — ${{ github.ref_name }}
+
+            ## Download
+
+            - **Windows** (x64): `kiem_sat_toolkit_${{ github.ref_name }}_windows_x64.exe`
+              - Yêu cầu: Windows 10/11 (WebView2 runtime đã có sẵn)
+              - Chạy: double-click file .exe — không cần cài đặt
+
+            - **Linux** (x64): `kiem_sat_toolkit_${{ github.ref_name }}_linux_x64`
+              - Yêu cầu: `libwebkit2gtk-4.1` đã cài trên hệ thống
+                (`sudo apt install libwebkit2gtk-4.1`)
+              - Chạy: `chmod +x kiem_sat_toolkit_*_linux_x64 && ./kiem_sat_toolkit_*_linux_x64`
+
+            ## Tính năng
+            - Án phí HS/DS, tiền lãi, tuổi/thời hạn, thời hiệu TNHS, bồi thường NTNĐ
+            - Tra cứu luật offline + biểu mẫu
+            - OCR PDF/ảnh (Tesseract)
+            - Che PII, rà soát chính tả, đổi tên file
+            - Quản lý vụ án + gắn nhãn chứng cứ
+            - 100% offline, không cần cài đặt, single binary
