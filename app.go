@@ -65,7 +65,7 @@ type Copyright struct {
 func (a *App) GetAppInfo() AppInfo {
         return AppInfo{
                 Name:        "Công cụ ngành Kiểm sát",
-                Version:     "0.1.0",
+                Version:     "0.2.0",
                 DataDir:     a.dataDir,
                 Platform:    "linux",
                 BuildDate:   "2026-10",

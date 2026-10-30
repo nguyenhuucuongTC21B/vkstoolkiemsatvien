@@ -67,7 +67,20 @@ Windows metadata (khi build .exe) sẽ hiển thị:
 
 ## Lịch sử thay đổi
 
-- **v0.1.0** (2026-10-30): Thêm logo VKS, icon Windows, avatar coder, popup bản quyền.
+- **v0.2.0** (2026-10-30): Major upgrade
+  - Legal: kho dữ liệu luật có cấu trúc Điều/Khoản/Điểm (BLHS, BLDS, BLTTHS, NR 326)
+  - Legal: SmartSearch — tự detect "điều X" / số hiệu / từ khóa
+  - Legal: popup modal hiển thị toàn văn điều/khoản/điểm
+  - Spell: thêm "Văn bản đã sửa hoàn thiện" (fixedText) + nút copy
+  - Docs: sinh file Word .docx thật (pure Go docxgen, không deps ngoài)
+  - Docs: thư viện 9 biểu mẫu đầy đủ (HS, DS, HC, THADS, THAHS, KN-TC, KKCI, VP)
+  - Docs: form điền fields trực quan thay vì JSON prompt
+  - Cases: CRUD UI đầy đủ + filter theo loại/trạng thái + deadline highlight
+  - Evidence: form add trực quan + tree view theo nhóm label
+  - Files: 18 Go source files, ~5000 LOC, 30 tests pass
+
+- **v0.1.0** (2026-10-30): Initial release
+  - Thêm logo VKS, icon Windows, avatar coder, popup bản quyền.
 
 ## ⚠️ LỆNH TRUYỀN TỪ CHỦ SỞ HỮU (PERSISTENT — áp dụng cho mọi phiên bản sau)
 
