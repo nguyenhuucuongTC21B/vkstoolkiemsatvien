@@ -1,0 +1,86 @@
+{
+  "version": "BLHS 2015 (sửa đổi, bổ sung 2017)",
+  "updated": "2026-10-30",
+  "source": "Cổng Thông tin điện tử Chính phủ (vbpl.vn)",
+  "chuong": [
+    {
+      "so": 13,
+      "ten": "Các tội xâm phạm an ninh quốc gia",
+      "dieu": [
+        {
+          "so": 108,
+          "ten": "Tội gián điệp",
+          "khoan": [
+            {"so": 1, "noiDung": "Người nào có hành vi gián điệp nhằm mục đích chống lại chính quyền nhân dân, thì bị phạt tù từ 12 năm đến 20 năm, tù chung thân hoặc tử hình.", "khungPhat": "12 - 20 năm, chung thân hoặc tử hình"},
+            {"so": 2, "noiDung": "Phạm tội trong trường hợp ít nghiêm trọng, thì bị phạt tù từ 05 năm đến 12 năm.", "khungPhat": "05 - 12 năm tù"}
+          ]
+        }
+      ]
+    },
+    {
+      "so": 18,
+      "ten": "Các tội xâm phạm tính mạng, sức khỏe, danh dự, nhân phẩm của con người",
+      "dieu": [
+        {
+          "so": 123,
+          "ten": "Tội giết người",
+          "khoan": [
+            {"so": 1, "noiDung": "Người nào giết người thuộc một trong các trường hợp sau đây, bị phạt tù từ 07 năm đến 15 năm: a) Giết 02 người trở lên; b) Giết người dưới 16 tuổi; ...", "khungPhat": "07 - 15 năm tù"},
+            {"so": 2, "noiDung": "Phạm tội không thuộc các trường hợp quy định tại khoản 1 Điều này, bị phạt tù từ 06 năm đến 15 năm.", "khungPhat": "06 - 15 năm tù"}
+          ]
+        },
+        {
+          "so": 134,
+          "ten": "Tội cố ý gây thương tích hoặc gây tổn hại sức khỏe của người khác",
+          "khoan": [
+            {"so": 1, "noiDung": "Người nào cố ý gây thương tích hoặc gây tổn hại sức khỏe của người khác mà tỷ lệ tổn thương cơ thể 11% trở xuống, bị phạt cải tạo không giam giữ đến 03 năm hoặc phạt tù từ 06 tháng đến 03 năm.", "khungPhat": "Cải tạo không giam giữ đến 03 năm, hoặc 06 tháng - 03 năm tù"},
+            {"so": 2, "noiDung": "Phạm tội thuộc một trong các trường hợp sau đây, bị phạt tù từ 01 năm đến 05 năm: a) Đối với người dưới 16 tuổi; b) Có tổ chức; c) Có sử dụng vũ khí hoặc vật liệu nổ; ...", "khungPhat": "01 - 05 năm tù"},
+            {"so": 3, "noiDung": "Phạm tội thuộc một trong các trường hợp sau đây, bị phạt tù từ 04 năm đến 07 năm: a) Làm nạn nhân bị thương tích có tỷ lệ tổn thương cơ thể 31% trở lên; ...", "khungPhat": "04 - 07 năm tù"},
+            {"so": 4, "noiDung": "Phạm tội thuộc một trong các trường hợp sau đây, bị phạt tù từ 07 năm đến 14 năm: a) Làm nạn nhân bị thương tích có tỷ lệ tổn thương cơ thể 61% trở lên; ...", "khungPhat": "07 - 14 năm tù"},
+            {"so": 5, "noiDung": "Phạm tội thuộc một trong các trường hợp sau đây, bị phạt tù từ 12 năm đến 20 năm hoặc tù chung thân: a) Làm nạn nhân chết; ...", "khungPhat": "12 - 20 năm, hoặc chung thân"}
+          ]
+        },
+        {
+          "so": 139,
+          "ten": "Tội cướp tài sản",
+          "khoan": [
+            {"so": 1, "noiDung": "Người nào dùng vũ lực hoặc đe dọa dùng vũ lực ngay tức khắc nhằm chiếm đoạt tài sản của người khác, bị phạt tù từ 03 năm đến 10 năm.", "khungPhat": "03 - 10 năm tù"},
+            {"so": 2, "noiDung": "Phạm tội thuộc trường hợp sau đây, bị phạt tù từ 07 năm đến 15 năm: a) Có tổ chức; b) Có sử dụng vũ khí hoặc vật liệu nổ; ...", "khungPhat": "07 - 15 năm tù"},
+            {"so": 3, "noiDung": "Phạm tội thuộc trường hợp sau đây, bị phạt tù từ 12 năm đến 20 năm: a) Chiếm đoạt tài sản có giá trị từ 50.000.000 đồng trở lên; ...", "khungPhat": "12 - 20 năm tù"},
+            {"so": 4, "noiDung": "Phạm tội thuộc trường hợp sau đây, bị phạt tù chung thân hoặc tử hình: a) Chiếm đoạt tài sản có giá trị từ 500.000.000 đồng trở lên; ...", "khungPhat": "Chung thân hoặc tử hình"}
+          ]
+        }
+      ]
+    },
+    {
+      "so": 19,
+      "ten": "Các tội xâm phạm sở hữu",
+      "dieu": [
+        {
+          "so": 173,
+          "ten": "Tội trộm cắp tài sản",
+          "khoan": [
+            {"so": 1, "noiDung": "Người nào trộm cắp tài sản của người khác có giá trị từ 2.000.000 đồng trở lên, bị phạt tù từ 06 tháng đến 03 năm.", "khungPhat": "06 tháng - 03 năm tù"},
+            {"so": 2, "noiDung": "Phạm tội thuộc trường hợp sau đây, bị phạt tù từ 02 năm đến 07 năm: a) Có tổ chức; b) Có tính chất chuyên nghiệp; c) Lợi dụng chức vụ, quyền hạn; ...", "khungPhat": "02 - 07 năm tù"},
+            {"so": 3, "noiDung": "Phạm tội thuộc trường hợp sau đây, bị phạt tù từ 07 năm đến 15 năm: a) Trộm cắp tài sản có giá trị từ 50.000.000 đồng trở lên; ...", "khungPhat": "07 - 15 năm tù"},
+            {"so": 4, "noiDung": "Phạm tội thuộc trường hợp sau đây, bị phạt tù từ 12 năm đến 20 năm: a) Trộm cắp tài sản có giá trị từ 500.000.000 đồng trở lên; ...", "khungPhat": "12 - 20 năm tù"}
+          ]
+        }
+      ]
+    },
+    {
+      "so": 21,
+      "ten": "Các tội phạm về ma túy",
+      "dieu": [
+        {
+          "so": 247,
+          "ten": "Tội sản xuất ma túy",
+          "khoan": [
+            {"so": 1, "noiDung": "Người nào sản xuất ma túy, bị phạt tù từ 01 năm đến 05 năm.", "khungPhat": "01 - 05 năm tù"},
+            {"so": 2, "noiDung": "Phạm tội thuộc trường hợp sau đây, bị phạt tù từ 05 năm đến 10 năm: a) Có tổ chức; b) Sản xuất số lượng nhỏ; ...", "khungPhat": "05 - 10 năm tù"}
+          ]
+        }
+      ]
+    }
+  ]
+}

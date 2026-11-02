@@ -6,6 +6,8 @@ package modules
 import (
         "kiem_sat_toolkit/internal/audit"
         "kiem_sat_toolkit/internal/db"
+        "kiem_sat_toolkit/internal/ai"
+        "kiem_sat_toolkit/internal/modules/aimod"
         "kiem_sat_toolkit/internal/modules/calc"
         "kiem_sat_toolkit/internal/modules/casefile"
         "kiem_sat_toolkit/internal/modules/docs"
@@ -17,7 +19,7 @@ import (
         "kiem_sat_toolkit/internal/modules/spell"
 )
 
-// Registry holds all module instances. Wails binds each public field.
+// Registry holds all module instances.
 type Registry struct {
         Calc     *calc.Service
         Legal    *legal.Service
@@ -28,11 +30,14 @@ type Registry struct {
         Evidence *evidence.Service
         Case     *casefile.Service
         Docs     *docs.Service
+        AI       *aimod.Service
 }
 
 // NewRegistry wires up every module with its dependencies.
 func NewRegistry(dbMgr *db.Manager, dataDir string) *Registry {
         auditLog := audit.New(dbMgr.App)
+
+        aiSvc := aimod.New(dataDir, auditLog)
 
         return &Registry{
                 Calc:     calc.New(dbMgr, auditLog),
@@ -44,14 +49,17 @@ func NewRegistry(dbMgr *db.Manager, dataDir string) *Registry {
                 Evidence: evidence.New(dbMgr, auditLog),
                 Case:     casefile.New(dbMgr, auditLog),
                 Docs:     docs.New(dbMgr, auditLog),
+                AI:       aiSvc,
         }
 }
 
-// ModuleNames returns the public module identifiers — surfaced to
-// the UI for the dashboard / sidebar.
+// ModuleNames returns the public module identifiers.
 func (r *Registry) ModuleNames() []string {
         return []string{
                 "calc", "legal", "ocr", "pii", "spell",
-                "file", "evidence", "case", "docs",
+                "file", "evidence", "case", "docs", "ai",
         }
 }
+
+// prevent unused import
+var _ = ai.ModelInfo{}
