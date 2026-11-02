@@ -67,6 +67,16 @@ Windows metadata (khi build .exe) sẽ hiển thị:
 
 ## Lịch sử thay đổi
 
+- **v1.0.0** (2026-10-30): Major release — AI Worker Pool
+  - Thêm `internal/ai/` — Worker Pool với Goroutines, channels (jobs/results)
+  - Model LLM load 1 lần trong RAM, defer Free() khi shutdown
+  - 5 module AI: EXTRACTOR, REPORTER, CHATTER, AUDITOR, LEGAL ADVISOR
+  - `laws.json` embed vào binary (BLHS 5 chương, 6 điều tiêu biểu)
+  - 2 binding modes: STUB (default, no deps) + REAL llama.cpp (build tag `llama`)
+  - Frontend: 6 routes AI + live log 60FPS polling
+  - File: 27 Go source, ~6300 LOC, 30 tests pass
+  - Spec: model `qwen3-0.6b-instruct-q4_k_m.gguf`, context 2048, temp 0.0-0.5
+
 - **v0.2.0** (2026-10-30): Major upgrade
   - Legal: kho dữ liệu luật có cấu trúc Điều/Khoản/Điểm (BLHS, BLDS, BLTTHS, NR 326)
   - Legal: SmartSearch — tự detect "điều X" / số hiệu / từ khóa

@@ -45,7 +45,7 @@ func main() {
         app := NewApp(registry, dataDir)
 
         err = wails.Run(&options.App{
-                Title:     "Công cụ ngành Kiểm sát",
+                Title:     "Công cụ ngành Kiểm sát v1.0",
                 Width:     1440,
                 Height:    900,
                 MinWidth:  1024,
@@ -68,14 +68,15 @@ func main() {
                         registry.Evidence,
                         registry.Case,
                         registry.Docs,
+                        registry.AI,
                 },
                 EnableDefaultContextMenu: true,
-                // Linux: icon cửa sổ khi minimize + tên chương trình cho window manager
+                // Linux: icon cửa sổ + tên chương trình
                 Linux: &linux.Options{
                         Icon:        windowIcon,
-                        ProgramName: "Công cụ ngành Kiểm sát",
+                        ProgramName: "Công cụ ngành Kiểm sát v1.0",
                 },
-                // Windows: .exe icon sẽ tự lấy từ build/windows/icon.ico khi build bằng `wails build`
+                // Windows: .exe icon từ build/windows/icon.ico qua wails build
                 Windows: &windows.Options{
                         WebviewIsTransparent: false,
                         WindowIsTranslucent:  false,
